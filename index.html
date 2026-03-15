@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>业务管理系统</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <main class="layout">
+      <section id="loginView" class="auth-wrap">
+        <div class="auth-card">
+          <p class="eyebrow">Secure Access</p>
+          <h1>业务管理系统登录</h1>
+          <p class="subtitle">登录后按角色显示对应权限界面。</p>
+          <form id="loginForm" class="auth-form">
+            <label>
+              用户名
+              <input id="usernameInput" required placeholder="请输入用户名" />
+            </label>
+            <label>
+              密码
+              <input id="passwordInput" type="password" required placeholder="请输入密码" />
+            </label>
+            <div class="auth-actions">
+              <button type="submit" class="btn btn-primary">登录系统</button>
+              <button id="resetLoginUsersBtn" type="button" class="btn btn-ghost">重置默认账号</button>
+              <button id="quickAdminLoginBtn" type="button" class="btn btn-ghost">管理员直登</button>
+            </div>
+            <div class="auth-accounts">
+              <p class="hint auth-hint">如果浏览器里留过旧账号数据，点“重置默认账号”可恢复初始登录。</p>
+              <p class="hint auth-hint">默认账号：<code>superadmin / Admin@123</code>，兼容：<code>admin / admin123</code>。</p>
+            </div>
+            <p id="loginStatus" class="status"></p>
+          </form>
+        </div>
+      </section>
+
+      <div id="appView" class="hidden">
+        <header class="hero">
+          <div class="hero-top">
+            <div>
+              <p class="eyebrow">Business Management</p>
+              <h1>L1 业务管理系统</h1>
+              <p class="subtitle">L2 包含「客户报价模块」「销售/收入分析模块」「成本分析模块」「经营情况分析模块」「系统权限模块」，需录入数据的统一在 L3。</p>
+            </div>
+            <div class="user-box">
+              <p>当前用户：<strong id="currentUserLabel">-</strong></p>
+              <p>角色：<strong id="currentRoleLabel">-</strong></p>
+              <button id="logoutBtn" class="btn">退出登录</button>
+            </div>
+          </div>
+        </header>
+
+        <section class="hero-overview reveal">
+          <div class="cockpit-grid">
+            <article class="cockpit-card cockpit-card-primary">
+              <p class="eyebrow">Enterprise Cockpit</p>
+              <h2>经营看板总览</h2>
+              <p class="subtitle">围绕客户报价、企业收入、企业成本和经营利润做统一监控，单条录入、批量上传、修改与确认全部在同一套闭环里处理。</p>
+              <div class="cockpit-stats">
+                <div class="cockpit-stat">
+                  <p>报价配置数</p>
+                  <strong id="overviewQuoteCount">0</strong>
+                  <span id="overviewQuoteHint">暂无报价数据</span>
+                </div>
+                <div class="cockpit-stat">
+                  <p>报价覆盖率</p>
+                  <strong id="overviewQuoteCoverage">0.00%</strong>
+                  <span id="overviewQuoteCoverageHint">按月度 RRP 配置情况统计</span>
+                </div>
+                <div class="cockpit-stat">
+                  <p>累计收入</p>
+                  <strong id="overviewRevenueTotal">0.00</strong>
+                  <span id="overviewRevenueHint">来自销售/收入分析模块</span>
+                </div>
+                <div class="cockpit-stat">
+                  <p>累计成本</p>
+                  <strong id="overviewCostTotal">0.00</strong>
+                  <span id="overviewCostHint">来自成本分析模块</span>
+                </div>
+                <div class="cockpit-stat">
+                  <p>经营净利润</p>
+                  <strong id="overviewNetProfit">0.00</strong>
+                  <span id="overviewNetProfitHint">收入、补贴、成本、税率联动</span>
+                </div>
+                <div class="cockpit-stat">
+                  <p>待确认数据</p>
+                  <strong id="overviewPendingCount">0</strong>
+                  <span id="overviewPendingHint">支持财务/管理员确认</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="cockpit-card formula-card">
+              <p class="eyebrow">Quote Engine</p>
+              <h2>报价公式自动化</h2>
+              <p id="quoteFormulaText" class="formula-text">
+                出货价 = (RRP / (1 + VAT)) × (1 - Front Margin) × (1 - DB点位 - 客户Margin - Service Fee) - STKbuffer
+              </p>
+              <div class="formula-chip-row">
+                <span class="formula-chip formula-chip-input">可录入：客户、SKU、分月RRP、DB、Margin、Service Fee、STKbuffer、Front Margin、VAT、URA</span>
+                <span class="formula-chip formula-chip-auto">自动化：分月出货价、销售单价回填、收入、毛利、经营分析</span>
+              </div>
+              <div id="quoteFormulaBreakdown" class="formula-breakdown">
+                系统会按客户 + SKU + 月份自动取值，除核心点位外，其余结果统一自动计算。
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <div class="app-shell">
+          <aside class="panel side-nav reveal">
+            <h2>L2 模块导航</h2>
+            <button class="side-btn active" type="button" data-module-target="quoteModuleView">客户报价模块</button>
+            <button class="side-btn" type="button" data-module-target="revenueModuleView">销售/收入分析模块</button>
+            <button class="side-btn" type="button" data-module-target="costModuleView">成本分析模块</button>
+            <button class="side-btn" type="button" data-module-target="businessModuleView">经营情况分析模块</button>
+            <button class="side-btn hidden" type="button" data-module-target="systemModuleView" id="systemModuleNavBtn">系统权限模块</button>
+            <p class="hint">点击左侧模块切换内容，页面保持简洁聚焦。</p>
+          </aside>
+
+          <section class="main-zone">
+            <div id="quoteModuleView" class="module-view">
+              <section class="panel reveal">
+                <h2>L2 客户报价模块｜报价查询</h2>
+                <p class="hint">SKU、月度 RRP 与各项 Margin 为可录入字段；系统自动完成月度出货价、销售单价回填与经营联动分析。</p>
+                <div class="query-grid">
+                  <label>
+                    客户名称
+                    <select id="queryCustomer"></select>
+                  </label>
+                  <label>
+                    产品 SKU
+                    <select id="querySku"></select>
+                  </label>
+                  <label>
+                    月份
+                    <select id="queryMonth"></select>
+                  </label>
+                </div>
+                <label class="keyword-inline">
+                  关键词索引（按 SKU 模糊筛选）
+                  <input id="queryKeyword" placeholder="输入关键词，如 Reno / Watch / charger" />
+                </label>
+                <button id="queryBtn" class="btn btn-primary">查询对应月份价格</button>
+                <div id="queryResult" class="result-card hidden"></div>
+              </section>
+
+              <section id="adjustPanel" class="panel reveal l3-card collapsed hidden">
+                <div class="l3-head">
+                  <div>
+                    <h2>L3 报价维护｜调整RRP和红色区域（非业务员）</h2>
+                    <p class="l3-summary">按客户与SKU定位后可维护分月RRP与红色区域字段。</p>
+                  </div>
+                  <button class="btn l3-toggle" type="button">展开</button>
+                </div>
+                <div class="l3-body">
+                  <div class="query-grid">
+                    <label>
+                      客户名称
+                      <select id="adjustCustomer"></select>
+                    </label>
+                    <label>
+                      产品 SKU
+                      <select id="adjustSku"></select>
+                    </label>
+                    <label>
+                      <span class="fake-label">操作</span>
+                      <button id="loadAdjustBtn" class="btn" type="button">载入当前配置</button>
+                    </label>
+                  </div>
+                  <label class="keyword-inline">
+                    关键词索引（按 SKU 模糊筛选）
+                    <input id="adjustKeyword" placeholder="输入关键词筛选 SKU" />
+                  </label>
+
+                  <h3>分月 RRP（可调整 1-12 月）</h3>
+                  <div class="rrp-grid" id="adjustRrpGrid"></div>
+
+                  <h3>红色区域字段（F-J）</h3>
+                  <div class="form-grid red-grid">
+                    <label>
+                      DB点位 (F) *
+                      <input id="adjustDbRate" placeholder="3.34% 或 0.0334" />
+                    </label>
+                    <label>
+                      客户Margin (G) *
+                      <input id="adjustCustomerMargin" placeholder="12.4% 或 0.124" />
+                    </label>
+                    <label>
+                      Service Fee (H) *
+                      <input id="adjustServiceFee" placeholder="0.12% 或 -0.12%" />
+                    </label>
+                    <label>
+                      STKbuffer (I) *
+                      <input id="adjustStkBuffer" placeholder="5" />
+                    </label>
+                    <label>
+                      Front Margin (J) *
+                      <input id="adjustFrontMargin" placeholder="0.5% 或 0.005" />
+                    </label>
+                  </div>
+                  <button id="saveAdjustBtn" class="btn btn-primary" type="button">保存调价</button>
+                  <p id="adjustStatus" class="status"></p>
+                </div>
+              </section>
+
+              <section id="salesNotice" class="panel reveal hidden">
+                <h2>销售前台</h2>
+                <p class="hint">当前账号可查阅报价与销售分析，并可录入销量；不显示报价维护与报价数据管理入口。</p>
+              </section>
+
+              <section id="adminPanelWrap" class="hidden">
+                <section class="panel reveal admin-only l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h2>L3 报价数据录入｜新增 / 更新单条报价</h2>
+                      <p class="l3-summary">录入客户、SKU、分月RRP及点位后自动更新报价；保存后进入待确认，可由财务或管理员确认生效。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <form id="recordForm">
+                      <div class="form-grid">
+                        <label>
+                          客户名称 *
+                          <input name="customerName" required placeholder="如：华东渠道A" />
+                        </label>
+                        <label>
+                          产品 SKU *
+                          <input name="sku" required placeholder="如：Reno14" />
+                        </label>
+                        <label>
+                          品类
+                          <input name="category" placeholder="如：手机" />
+                        </label>
+                      </div>
+
+                      <h3>分月 RRP（可填 1-12 月）</h3>
+                      <div class="rrp-grid" id="rrpGrid"></div>
+
+                      <h3>点位字段（截图标红 + VAT/URA）</h3>
+                      <div class="form-grid red-grid">
+                        <label>
+                          DB点位 (F) *
+                          <input name="dbRate" required placeholder="3.34% 或 0.0334" />
+                        </label>
+                        <label>
+                          客户Margin (G) *
+                          <input name="customerMargin" required placeholder="12.4% 或 0.124" />
+                        </label>
+                        <label>
+                          Service Fee (H) *
+                          <input name="serviceFee" required placeholder="0.12% 或 -0.12%" />
+                        </label>
+                        <label>
+                          STKbuffer (I) *
+                          <input name="stkBuffer" required placeholder="5" />
+                        </label>
+                        <label>
+                          Front Margin (J) *
+                          <input name="frontMargin" required placeholder="0.5% 或 0.005" />
+                        </label>
+                        <label>
+                          VAT (K)
+                          <input name="vatRate" value="20%" />
+                        </label>
+                        <label>
+                          URA (L)
+                          <input name="ura" value="5.5" />
+                        </label>
+                      </div>
+                      <button type="submit" class="btn btn-primary">保存 / 更新该客户SKU报价</button>
+                      <p class="hint">相同「客户名称 + SKU」会自动覆盖更新，确保每个客户点位独立；修改后确认状态会自动重置为待确认。</p>
+                    </form>
+                  </div>
+                </section>
+
+                <section class="panel reveal admin-only l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h2>L3 报价数据录入｜批量上传 CSV / Excel</h2>
+                      <p class="l3-summary">支持一次导入多客户多SKU报价数据。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <p class="hint">
+                      上传字段需包含：customerName、sku、rrp1~rrp12、dbRate、customerMargin、serviceFee、stkBuffer、frontMargin。
+                    </p>
+                    <p class="hint">
+                      可选字段：category、vatRate、ura。支持 .csv/.xlsx/.xls，百分比支持写法：3.34% 或 0.0334。
+                    </p>
+                    <div class="upload-row">
+                      <input id="csvInput" type="file" accept=".csv,.xlsx,.xls" />
+                      <button id="downloadTemplateBtn" class="btn">下载CSV模板</button>
+                    </div>
+                    <p id="uploadStatus" class="status"></p>
+                  </div>
+                </section>
+
+                <section class="panel reveal admin-only l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h2>L3 报价数据管理｜当前报价数据</h2>
+                      <p class="l3-summary">可查看、编辑、删除已录入报价。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <div class="table-wrap">
+                      <table id="recordsTable">
+                        <thead>
+                          <tr>
+                            <th>客户</th>
+                            <th>SKU</th>
+                            <th>品类</th>
+                            <th>DB</th>
+                            <th>客户Margin</th>
+                            <th>Service Fee</th>
+                            <th>Front Margin</th>
+                            <th>VAT</th>
+                            <th>确认状态</th>
+                            <th>操作</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+
+              </section>
+            </div>
+
+            <div id="revenueModuleView" class="module-view hidden">
+              <section class="panel reveal" id="revenuePanel">
+                <h2>L2 销售/收入分析模块</h2>
+                <div id="revenueEntrySection" class="l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h3>L3 销量数据录入</h3>
+                      <p class="l3-summary">录入单条或批量上传销量数据，用于收入分析；支持后续修改与确认。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <div class="form-grid">
+                      <label>
+                        客户名称
+                        <select id="revenueInputCustomer"></select>
+                      </label>
+                      <label>
+                        产品 SKU
+                        <select id="revenueInputSku"></select>
+                      </label>
+                      <label>
+                        销售月份
+                        <input id="revenueInputMonth" type="month" />
+                      </label>
+                      <label>
+                        销售数量
+                        <input id="revenueInputQty" type="number" min="0" step="1" placeholder="如：120" />
+                      </label>
+                      <label>
+                        成交单价（可空）
+                        <input id="revenueInputUnitPrice" type="number" min="0" step="0.01" placeholder="留空=按报价计算" />
+                      </label>
+                      <label>
+                        FOB采购成本 *
+                        <input id="revenueInputUnitCost" type="number" min="0" step="0.01" placeholder="如：210.50" />
+                      </label>
+                      <label>
+                        <span class="fake-label">操作</span>
+                        <button id="saveRevenueBtn" class="btn btn-primary" type="button">保存 / 更新销售记录</button>
+                      </label>
+                    </div>
+                    <p class="hint">成交单价留空时，系统自动读取该客户SKU当月报价作为单价；毛利计算统一基于 FOB 采购成本；修改后确认状态会回到待确认。</p>
+                    <p id="revenueStatus" class="status"></p>
+
+                    <div id="revenueUploadSection">
+                      <h3>L3 销量数据录入｜批量上传 CSV / Excel</h3>
+                      <p class="hint">表头字段：customerName、sku、saleMonth(YYYY-MM)、quantity、unitPrice(可选)、unitCost(FOB必填)。</p>
+                      <div class="upload-row">
+                        <input id="revenueUploadInput" type="file" accept=".csv,.xlsx,.xls" />
+                        <button id="downloadRevenueTemplateBtn" class="btn" type="button">下载销量模板</button>
+                      </div>
+                      <p id="revenueUploadStatus" class="status"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <h3>销售结果 / 收入结果</h3>
+                <div class="query-grid">
+                  <label>
+                    客户筛选
+                    <select id="revenueFilterCustomer"></select>
+                  </label>
+                  <label>
+                    型号筛选
+                    <select id="revenueFilterSku"></select>
+                  </label>
+                  <label>
+                    月份筛选
+                    <input id="revenueFilterMonth" type="month" />
+                  </label>
+                </div>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <p>总收入</p>
+                    <strong id="revenueTotalAmount">0.00</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>总销量</p>
+                    <strong id="revenueTotalQty">0</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>记录条数</p>
+                    <strong id="revenueRecordCount">0</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>平均单价</p>
+                    <strong id="revenueAvgPrice">0.00</strong>
+                  </div>
+                </div>
+                <div class="result-duo">
+                  <div class="result-card">
+                    <p><strong>销售结果</strong></p>
+                    <p id="salesResultSummary">暂无数据</p>
+                  </div>
+                  <div class="result-card">
+                    <p><strong>收入结果</strong></p>
+                    <p id="incomeResultSummary">暂无数据</p>
+                  </div>
+                </div>
+
+                <section id="grossSection" class="gross-panel hidden">
+                  <h3>毛利/毛利率分析（仅超级管理员、财务负责人）</h3>
+                  <p class="hint">毛利额 = (单台收入 - 单台FOB采购成本) × 销量；单台毛利率 = 单台毛利 ÷ 单台采购成本。</p>
+                  <div class="summary-grid">
+                    <div class="summary-item">
+                      <p>总毛利额</p>
+                      <strong id="grossTotalAmount">0.00</strong>
+                    </div>
+                    <div class="summary-item">
+                      <p>综合毛利率</p>
+                      <strong id="grossMarginRate">0.00%</strong>
+                    </div>
+                    <div class="summary-item">
+                      <p>平均单台毛利</p>
+                      <strong id="grossAvgUnitProfit">0.00</strong>
+                    </div>
+                    <div class="summary-item">
+                      <p>平均单台毛利率</p>
+                      <strong id="grossAvgUnitMargin">0.00%</strong>
+                    </div>
+                  </div>
+                  <div class="result-duo">
+                    <div class="result-card">
+                      <p><strong>毛利额结果</strong></p>
+                      <p id="grossResultSummary">暂无数据</p>
+                    </div>
+                    <div class="result-card">
+                      <p><strong>毛利率结果</strong></p>
+                      <p id="grossMarginResultSummary">暂无数据</p>
+                    </div>
+                  </div>
+
+                  <div class="summary-split">
+                    <section class="group-card l3-card collapsed">
+                      <div class="l3-head">
+                        <div>
+                          <h3>毛利分客户</h3>
+                          <p class="l3-summary">按客户汇总销量、收入、毛利额和毛利率。</p>
+                        </div>
+                        <button class="btn l3-toggle" type="button">展开</button>
+                      </div>
+                      <div class="l3-body table-wrap">
+                        <table id="grossByCustomerTable">
+                          <thead>
+                            <tr>
+                              <th>客户</th>
+                              <th>销量</th>
+                              <th>收入</th>
+                              <th>采购成本</th>
+                              <th>毛利额</th>
+                              <th>毛利率</th>
+                            </tr>
+                          </thead>
+                          <tbody></tbody>
+                        </table>
+                      </div>
+                    </section>
+
+                    <section class="group-card l3-card collapsed">
+                      <div class="l3-head">
+                        <div>
+                          <h3>毛利分机型（品类）</h3>
+                          <p class="l3-summary">按机型/品类汇总毛利表现，识别高毛利品类与风险品类。</p>
+                        </div>
+                        <button class="btn l3-toggle" type="button">展开</button>
+                      </div>
+                      <div class="l3-body table-wrap">
+                        <table id="grossByCategoryTable">
+                          <thead>
+                            <tr>
+                              <th>机型（品类）</th>
+                              <th>销量</th>
+                              <th>收入</th>
+                              <th>采购成本</th>
+                              <th>毛利额</th>
+                              <th>毛利率</th>
+                            </tr>
+                          </thead>
+                          <tbody></tbody>
+                        </table>
+                      </div>
+                    </section>
+
+                    <section class="group-card l3-card collapsed">
+                      <div class="l3-head">
+                        <div>
+                          <h3>毛利分型号（SKU）</h3>
+                          <p class="l3-summary">按型号汇总毛利表现，识别高毛利主力型号与低毛利型号。</p>
+                        </div>
+                        <button class="btn l3-toggle" type="button">展开</button>
+                      </div>
+                      <div class="l3-body table-wrap">
+                        <table id="grossBySkuTable">
+                          <thead>
+                            <tr>
+                              <th>型号</th>
+                              <th>销量</th>
+                              <th>收入</th>
+                              <th>采购成本</th>
+                              <th>毛利额</th>
+                              <th>毛利率</th>
+                            </tr>
+                          </thead>
+                          <tbody></tbody>
+                        </table>
+                      </div>
+                    </section>
+                  </div>
+                </section>
+
+                <div id="grossNoPermission" class="result-card hidden">
+                  当前账号无毛利额/毛利率查看权限（仅超级管理员、财务负责人可见）。
+                </div>
+
+                <h3>简易 AI 分析（DeepSeek）</h3>
+                <div class="form-grid">
+                  <label>
+                    DeepSeek API Key
+                    <input id="deepseekApiKey" type="password" placeholder="输入 sk- 开头密钥（仅本地浏览器使用）" />
+                  </label>
+                  <label>
+                    分析关注点（可选）
+                    <input id="aiFocusInput" placeholder="例如：高增长客户、低毛利型号、下月建议" />
+                  </label>
+                  <label>
+                    <span class="fake-label">操作</span>
+                    <button id="runAiAnalysisBtn" class="btn" type="button">生成 AI 分析</button>
+                  </label>
+                </div>
+                <p id="aiStatus" class="status"></p>
+                <div id="aiResult" class="result-card hidden"></div>
+
+                <div class="table-wrap">
+                  <table id="revenueRecordsTable">
+                    <thead>
+                      <tr>
+                        <th>客户</th>
+                        <th>SKU</th>
+                        <th>月份</th>
+                        <th>销量</th>
+                        <th>单价</th>
+                        <th>收入</th>
+                        <th>来源</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+
+                <div class="summary-split">
+                  <section class="group-card l3-card collapsed">
+                    <div class="l3-head">
+                      <div>
+                        <h3>分客户汇总</h3>
+                        <p class="l3-summary">按客户汇总销量与收入，适合观察重点客户贡献。</p>
+                      </div>
+                      <button class="btn l3-toggle" type="button">展开</button>
+                    </div>
+                    <div class="l3-body table-wrap">
+                      <table id="revenueByCustomerTable">
+                        <thead>
+                          <tr>
+                            <th>客户</th>
+                            <th>销量</th>
+                            <th>收入</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </section>
+                  <section class="group-card l3-card collapsed">
+                    <div class="l3-head">
+                      <div>
+                        <h3>分型号汇总</h3>
+                        <p class="l3-summary">按型号汇总销量与收入，适合识别主力机型与长尾机型。</p>
+                      </div>
+                      <button class="btn l3-toggle" type="button">展开</button>
+                    </div>
+                    <div class="l3-body table-wrap">
+                      <table id="revenueBySkuTable">
+                        <thead>
+                          <tr>
+                            <th>型号</th>
+                            <th>销量</th>
+                            <th>收入</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </section>
+                  <section class="group-card l3-card collapsed">
+                    <div class="l3-head">
+                      <div>
+                        <h3>分月份汇总</h3>
+                        <p class="l3-summary">按月份汇总销量与收入，适合观察趋势变化。</p>
+                      </div>
+                      <button class="btn l3-toggle" type="button">展开</button>
+                    </div>
+                    <div class="l3-body table-wrap">
+                      <table id="revenueByMonthTable">
+                        <thead>
+                          <tr>
+                            <th>月份</th>
+                            <th>销量</th>
+                            <th>收入</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            </div>
+
+            <div id="costModuleView" class="module-view hidden">
+              <section class="panel reveal" id="costPanel">
+                <h2>L2 成本分析模块</h2>
+
+                <section id="costEntrySection" class="l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h3>L3 成本数据录入</h3>
+                      <p class="l3-summary">录入成本名称、金额、订单生成时间、成本发生时间，系统自动识别并匹配 L1-L3 分类；支持修改与确认。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <div class="form-grid">
+                      <label>
+                        成本名称 / 关键词 *
+                        <input id="costInputName" placeholder="如：工资、交通费、物流费、银行手续费" />
+                      </label>
+                      <label>
+                        成本金额 *
+                        <input id="costInputAmount" type="number" min="0" step="0.01" placeholder="如：2500.00" />
+                      </label>
+                      <label>
+                        订单生成时间 *
+                        <input id="costInputOrderCreatedAt" type="datetime-local" />
+                      </label>
+                      <label>
+                        成本发生时间 *
+                        <input id="costInputOccurredAt" type="date" />
+                      </label>
+                      <label>
+                        权责发生时间 *
+                        <select id="costInputAccrualStatus">
+                          <option value="已发生已开票">已发生已开票</option>
+                          <option value="已发生未开票">已发生未开票</option>
+                        </select>
+                      </label>
+                      <label>
+                        辅助说明
+                        <input id="costInputDescription" placeholder="如：社保代缴服务、深圳仓物流配送" />
+                      </label>
+                      <label class="span-3">
+                        发票 / 邮件 / 原始文字信息
+                        <textarea
+                          id="costInputSourceText"
+                          rows="4"
+                          placeholder="可粘贴发票摘要、邮件正文、英文/德文费用描述、报销说明等，系统会结合 DeepSeek 识别费用科目"
+                        ></textarea>
+                      </label>
+                      <label>
+                        自动识别 L1
+                        <input id="costMatchedL1" readonly placeholder="系统自动匹配" />
+                      </label>
+                      <label>
+                        自动识别 L2
+                        <input id="costMatchedL2" readonly placeholder="系统自动匹配" />
+                      </label>
+                      <label>
+                        自动识别 L3
+                        <input id="costMatchedL3" readonly placeholder="系统自动匹配" />
+                      </label>
+                      <label>
+                        <span class="fake-label">操作</span>
+                        <div class="upload-row">
+                          <input id="costImageRecognizeInput" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif,.pdf" class="hidden" />
+                          <button id="recognizeCostImageBtn" class="btn" type="button">识别图片/发票</button>
+                          <button id="recognizeCostAiBtn" class="btn" type="button">AI识别费用科目</button>
+                          <button id="saveCostBtn" class="btn btn-primary" type="button">保存 / 更新成本记录</button>
+                        </div>
+                      </label>
+                    </div>
+                    <p class="hint">系统先用本地规则做快速预判；如已配置 DeepSeek，则可进一步结合发票图片、扫描 PDF、邮件/原始文字信息做中文、英文、德文的费用科目识别；保存后可进入确认流程。</p>
+                    <p id="costStatus" class="status"></p>
+                  </div>
+                </section>
+
+                <section id="costUploadSection" class="l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h3>L3 成本数据录入｜批量上传 CSV / Excel</h3>
+                      <p class="l3-summary">上传后自动识别并匹配到对应 L1 / L2 / L3 分类。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <p class="hint">支持三类上传：1）CSV / Excel 批量导入；2）单张或多张发票图片 / PDF 智能识别；3）邮件/文字文件识别。建议字段：costName、amount、orderCreatedAt、costOccurredAt、accrualStatus，可选字段：description、sourceText、l1、l2、l3。</p>
+                    <label class="keyword-inline">
+                      DeepSeek API Key（用于费用明细智能识别）
+                      <input id="costDeepseekApiKey" type="password" placeholder="输入 sk- 开头密钥；仅保存在当前浏览器" />
+                    </label>
+                    <p class="hint">上传时若存在有效 DeepSeek 密钥，系统会优先调用 AI 识别发票图片、扫描 PDF、邮件正文或文字说明；失败时自动回退到本地规则识别或待确认。</p>
+                    <div class="upload-row">
+                      <input id="costUploadInput" type="file" accept=".csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp,.pdf,.txt,.eml,.md" multiple />
+                      <button id="downloadCostTemplateBtn" class="btn" type="button">下载成本模板</button>
+                    </div>
+                    <p id="costUploadStatus" class="status"></p>
+                  </div>
+                </section>
+
+                <section id="costManualReviewSection" class="l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h3>L3 待确认成本人工修整</h3>
+                      <p class="l3-summary">对未识别或待确认的成本记录进行人工归类修整，修整后将进入正式 L1 / L2 / L3 分类。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <div class="form-grid">
+                      <label>
+                        待确认记录
+                        <select id="costPendingRecordSelect"></select>
+                      </label>
+                      <label>
+                        成本名称
+                        <input id="costReviewName" readonly placeholder="选择待确认记录后显示" />
+                      </label>
+                      <label>
+                        成本金额
+                        <input id="costReviewAmount" readonly placeholder="选择待确认记录后显示" />
+                      </label>
+                      <label>
+                        一级分类 L1
+                        <select id="costReviewL1"></select>
+                      </label>
+                      <label>
+                        二级分类 L2
+                        <select id="costReviewL2"></select>
+                      </label>
+                      <label>
+                        三级分类 L3
+                        <select id="costReviewL3"></select>
+                      </label>
+                      <label>
+                        辅助说明
+                        <input id="costReviewDescription" readonly placeholder="选择待确认记录后显示" />
+                      </label>
+                      <label>
+                        订单生成时间
+                        <input id="costReviewOrderCreatedAt" readonly placeholder="选择待确认记录后显示" />
+                      </label>
+                      <label>
+                        成本发生时间
+                        <input id="costReviewOccurredAt" readonly placeholder="选择待确认记录后显示" />
+                      </label>
+                      <label>
+                        权责发生时间
+                        <input id="costReviewAccrualStatus" readonly placeholder="选择待确认记录后显示" />
+                      </label>
+                    </div>
+                    <div class="upload-row">
+                      <button id="loadPendingCostBtn" class="btn" type="button">载入待确认记录</button>
+                      <button id="savePendingCostReviewBtn" class="btn btn-primary" type="button">保存人工修整</button>
+                    </div>
+                    <p id="costReviewStatus" class="status"></p>
+                  </div>
+                </section>
+
+                <h3>成本结果与层级分析</h3>
+                <div class="query-grid">
+                  <label>
+                    L1筛选
+                    <select id="costFilterL1"></select>
+                  </label>
+                  <label>
+                    L2筛选
+                    <select id="costFilterL2"></select>
+                  </label>
+                  <label>
+                    L3筛选
+                    <select id="costFilterL3"></select>
+                  </label>
+                </div>
+                <div class="query-grid">
+                  <label>
+                    成本发生月份
+                    <input id="costFilterMonth" type="month" />
+                  </label>
+                  <label>
+                    权责发生时间
+                    <select id="costFilterAccrualStatus">
+                      <option value="ALL">全部状态</option>
+                      <option value="已发生已开票">已发生已开票</option>
+                      <option value="已发生未开票">已发生未开票</option>
+                    </select>
+                  </label>
+                  <label>
+                    关键词检索
+                    <input id="costFilterKeyword" placeholder="输入工资 / 物流 / 交通 / 银行 等关键词" />
+                  </label>
+                  <label>
+                    订单生成月份
+                    <input id="costFilterOrderMonth" type="month" />
+                  </label>
+                </div>
+
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <p>总成本</p>
+                    <strong id="costTotalAmount">0.00</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>记录条数</p>
+                    <strong id="costRecordCount">0</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>已匹配条数</p>
+                    <strong id="costMatchedCount">0</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>平均单笔成本</p>
+                    <strong id="costAvgAmount">0.00</strong>
+                  </div>
+                </div>
+
+                <div class="result-card">
+                  <p><strong>成本分析结论</strong></p>
+                  <p id="costResultSummary">暂无数据</p>
+                </div>
+
+                <div class="table-wrap">
+                  <table id="costRecordsTable">
+                    <thead>
+                      <tr>
+                        <th>成本名称</th>
+                        <th>金额</th>
+                        <th>订单生成时间</th>
+                        <th>成本发生时间</th>
+                        <th>权责发生时间</th>
+                        <th>L1</th>
+                        <th>L2</th>
+                        <th>L3</th>
+                        <th>识别状态</th>
+                        <th>确认状态</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+
+                <div class="summary-split">
+                  <section class="group-card l3-card collapsed">
+                    <div class="l3-head">
+                      <div>
+                        <h3>分 L1 汇总</h3>
+                        <p class="l3-summary">按一级成本层级汇总成本金额与记录数。</p>
+                      </div>
+                      <button class="btn l3-toggle" type="button">展开</button>
+                    </div>
+                    <div class="l3-body table-wrap">
+                      <table id="costByL1Table">
+                        <thead>
+                          <tr>
+                            <th>L1</th>
+                            <th>记录数</th>
+                            <th>总成本</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </section>
+
+                  <section class="group-card l3-card collapsed">
+                    <div class="l3-head">
+                      <div>
+                        <h3>分 L2 汇总</h3>
+                        <p class="l3-summary">按二级成本层级汇总成本金额与记录数。</p>
+                      </div>
+                      <button class="btn l3-toggle" type="button">展开</button>
+                    </div>
+                    <div class="l3-body table-wrap">
+                      <table id="costByL2Table">
+                        <thead>
+                          <tr>
+                            <th>L2</th>
+                            <th>记录数</th>
+                            <th>总成本</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </section>
+
+                  <section class="group-card l3-card collapsed">
+                    <div class="l3-head">
+                      <div>
+                        <h3>分 L3 汇总</h3>
+                        <p class="l3-summary">按三级成本层级汇总成本金额与记录数。</p>
+                      </div>
+                      <button class="btn l3-toggle" type="button">展开</button>
+                    </div>
+                    <div class="l3-body table-wrap">
+                      <table id="costByL3Table">
+                        <thead>
+                          <tr>
+                            <th>L3</th>
+                            <th>记录数</th>
+                            <th>总成本</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </section>
+                </div>
+
+                <section class="panel reveal">
+                  <h3>简易 AI 成本分析（DeepSeek）</h3>
+                  <div class="query-grid">
+                    <label>
+                      关注点
+                      <input id="costAiFocusInput" placeholder="如：未开票成本偏高、物流费异常、待确认科目集中在哪些月份" />
+                    </label>
+                    <label>
+                      <span class="fake-label">操作</span>
+                      <button id="runCostAiAnalysisBtn" class="btn" type="button">生成成本 AI 分析</button>
+                    </label>
+                  </div>
+                  <p class="hint">将基于当前成本筛选结果，输出成本结构、异常波动、未开票风险与优化建议。</p>
+                  <p id="costAiStatus" class="status"></p>
+                  <div id="costAiResult" class="result-card hidden"></div>
+                </section>
+              </section>
+            </div>
+
+            <div id="businessModuleView" class="module-view hidden">
+              <section class="panel reveal">
+                <h2>L2 经营情况分析模块</h2>
+                <div class="query-grid">
+                  <label>
+                    年份
+                    <select id="businessYearSelect">
+                      <option value="2026">2026年</option>
+                      <option value="2027">2027年</option>
+                      <option value="2028">2028年</option>
+                    </select>
+                  </label>
+                  <label>
+                    时间维度
+                    <select id="businessPeriodTypeSelect">
+                      <option value="month">月度</option>
+                      <option value="quarter" selected>季度</option>
+                      <option value="half_year">半年度</option>
+                      <option value="year">年度</option>
+                    </select>
+                  </label>
+                  <label>
+                    时间段
+                    <select id="businessPeriodValueSelect">
+                      <option value="Q1">Q1（1-3月）</option>
+                      <option value="Q2">Q2（4-6月）</option>
+                      <option value="Q3">Q3（7-9月）</option>
+                      <option value="Q4">Q4（10-12月）</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="fake-label">操作</span>
+                    <button id="refreshBusinessBtn" class="btn" type="button">刷新经营分析</button>
+                  </label>
+                </div>
+
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <p>当前周期销售收入</p>
+                    <strong id="businessRevenueTotal">0.00</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>当前周期营业利润</p>
+                    <strong id="businessOperatingProfitTotal">0.00</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>当前周期净利润</p>
+                    <strong id="businessNetProfitTotal">0.00</strong>
+                  </div>
+                  <div class="summary-item">
+                    <p>当前周期净利率</p>
+                    <strong id="businessNetMarginTotal">0.00%</strong>
+                  </div>
+                </div>
+
+                <div class="table-wrap">
+                  <table id="businessAnalysisTable">
+                    <thead id="businessAnalysisTableHead"></thead>
+                    <tbody id="businessAnalysisTableBody"></tbody>
+                  </table>
+                </div>
+
+                <div class="result-card">
+                  <p><strong>字段映射与数据来源</strong></p>
+                  <div id="businessSourceSummary"></div>
+                </div>
+
+                <div class="result-card">
+                  <p><strong>经营分析结论</strong></p>
+                  <p id="businessAnalysisSummary">暂无数据</p>
+                </div>
+
+                <section class="panel reveal">
+                  <h3>核心指标监控</h3>
+                  <p class="hint">根据目标值与实际值自动标记红黄绿，帮助快速监控经营结果、业务结构、费用结构与盈利能力。</p>
+                  <div id="businessKpiMonitorBoard" class="kpi-board"></div>
+                  <p id="businessKpiMonitorStatus" class="status"></p>
+                </section>
+
+                <section id="businessKpiTargetSection" class="l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h3>L3 核心指标目标设置</h3>
+                      <p class="l3-summary">为当前月 / 季度 / 半年度 / 年度设置目标值，系统会按结果类/费用类规则自动监控颜色。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <div class="form-grid">
+                      <label>
+                        年份
+                        <select id="businessKpiYearSelect">
+                          <option value="2026">2026年</option>
+                          <option value="2027">2027年</option>
+                          <option value="2028">2028年</option>
+                        </select>
+                      </label>
+                      <label>
+                        时间维度
+                        <select id="businessKpiPeriodTypeSelect">
+                          <option value="month">月度</option>
+                          <option value="quarter" selected>季度</option>
+                          <option value="half_year">半年度</option>
+                          <option value="year">年度</option>
+                        </select>
+                      </label>
+                      <label>
+                        时间段
+                        <select id="businessKpiPeriodValueSelect">
+                          <option value="Q1">Q1（1-3月）</option>
+                          <option value="Q2">Q2（4-6月）</option>
+                          <option value="Q3">Q3（7-9月）</option>
+                          <option value="Q4">Q4（10-12月）</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="form-grid">
+                      <label>销量目标<input id="targetSalesVolume" type="number" step="0.01" /></label>
+                      <label>收入目标<input id="targetRevenue" type="number" step="0.01" /></label>
+                      <label>毛利率目标<input id="targetGrossMargin" placeholder="如：39%" /></label>
+                      <label>净利率目标<input id="targetNetMargin" placeholder="如：4%" /></label>
+                      <label>Find 目标<input id="targetFindSales" type="number" step="0.01" /></label>
+                      <label>Reno 目标<input id="targetRenoSales" type="number" step="0.01" /></label>
+                      <label>A系列目标<input id="targetASeriesSales" type="number" step="0.01" /></label>
+                      <label>IoT 目标<input id="targetIoTSales" type="number" step="0.01" /></label>
+                      <label>工资目标<input id="targetSalaryExpense" type="number" step="0.01" /></label>
+                      <label>后台经营类目标<input id="targetBackOfficeExpense" type="number" step="0.01" /></label>
+                      <label>市场营销目标<input id="targetMarketingExpense" type="number" step="0.01" /></label>
+                      <label>Find毛利率目标<input id="targetFindGrossMargin" placeholder="如：45%" /></label>
+                      <label>Reno毛利率目标<input id="targetRenoGrossMargin" placeholder="如：37%" /></label>
+                      <label>A系列毛利率目标<input id="targetASeriesGrossMargin" placeholder="如：30%" /></label>
+                      <label>IoT毛利率目标<input id="targetIoTGrossMargin" placeholder="如：45%" /></label>
+                    </div>
+                    <button id="saveBusinessKpiTargetBtn" class="btn btn-primary" type="button">保存核心指标目标</button>
+                    <p id="businessKpiTargetStatus" class="status"></p>
+                  </div>
+                </section>
+
+                <section id="businessEntrySection" class="l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h3>L3 经营补充数据录入</h3>
+                      <p class="l3-summary">录入工厂补贴/返点与企业所得税率，补齐经营分析缺失字段；支持修改与确认。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <div class="form-grid">
+                      <label>
+                        月份 *
+                        <input id="businessInputMonth" type="month" />
+                      </label>
+                      <label>
+                        工厂补贴 / 返点
+                        <input id="businessInputFactoryRebate" type="number" step="0.01" placeholder="如：15000" />
+                      </label>
+                      <label>
+                        企业所得税率
+                        <input id="businessInputIncomeTaxRate" placeholder="如：25% 或 0.25" />
+                      </label>
+                      <label>
+                        备注
+                        <input id="businessInputRemark" placeholder="如：渠道返利、总部补贴" />
+                      </label>
+                    </div>
+                    <button id="saveBusinessEntryBtn" class="btn btn-primary" type="button">保存 / 更新经营补充数据</button>
+                    <p id="businessEntryStatus" class="status"></p>
+                  </div>
+                </section>
+
+                <section id="businessUploadSection" class="l3-card collapsed">
+                  <div class="l3-head">
+                    <div>
+                      <h3>L3 经营补充数据批量上传</h3>
+                      <p class="l3-summary">支持 CSV / Excel 导入 `month + factoryRebate + incomeTaxRate` 字段。</p>
+                    </div>
+                    <button class="btn l3-toggle" type="button">展开</button>
+                  </div>
+                  <div class="l3-body">
+                    <p class="hint">建议字段：month、factoryRebate、incomeTaxRate，可选字段：remark。</p>
+                    <div class="upload-row">
+                      <input id="businessUploadInput" type="file" accept=".csv,.xlsx,.xls" />
+                      <button id="downloadBusinessTemplateBtn" class="btn" type="button">下载经营模板</button>
+                    </div>
+                    <p id="businessUploadStatus" class="status"></p>
+                  </div>
+                </section>
+
+                <section class="panel reveal">
+                  <h3>简易 AI 经营情况分析（DeepSeek）</h3>
+                  <div class="query-grid">
+                    <label>
+                      关注点
+                      <input id="businessAiFocusInput" placeholder="如：净利率下降原因、固定费用偏高、返点贡献度" />
+                    </label>
+                    <label>
+                      <span class="fake-label">操作</span>
+                      <button id="runBusinessAiAnalysisBtn" class="btn" type="button">生成经营 AI 分析</button>
+                    </label>
+                  </div>
+                  <p class="hint">将关联销售、毛利、成本和补贴/税率数据，输出经营情况分析与建议。</p>
+                  <p id="businessAiStatus" class="status"></p>
+                  <div id="businessAiResult" class="result-card hidden"></div>
+                </section>
+
+                <section class="panel reveal">
+                  <h3>当前经营补充数据</h3>
+                  <div class="table-wrap">
+                    <table id="businessEntryTable">
+                      <thead>
+                        <tr>
+                          <th>月份</th>
+                          <th>工厂补贴/返点</th>
+                          <th>企业所得税率</th>
+                          <th>备注</th>
+                          <th>确认状态</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </section>
+              </section>
+            </div>
+
+            <div id="systemModuleView" class="module-view hidden">
+              <section id="superAdminUserSection" class="panel reveal hidden">
+                <h2>L2 系统权限模块｜账号管理（超级管理员 / 财务负责人）</h2>
+                <p class="hint">支持新增账号、改密、禁用与删除账号。</p>
+
+                <div class="form-grid">
+                  <label>
+                    新用户名 *
+                    <input id="newUserUsername" placeholder="如：northsales" />
+                  </label>
+                  <label>
+                    姓名/显示名 *
+                    <input id="newUserDisplayName" placeholder="如：华北销售一部" />
+                  </label>
+                  <label>
+                    角色 *
+                    <select id="newUserRole">
+                      <option value="super_admin">超级管理员</option>
+                      <option value="finance_head">财务负责人</option>
+                      <option value="sales_head">业务负责人</option>
+                      <option value="sales_rep" selected>业务人员</option>
+                    </select>
+                  </label>
+                  <label>
+                    初始密码 *
+                    <input id="newUserPassword" type="password" placeholder="至少6位" />
+                  </label>
+                  <label>
+                    确认密码 *
+                    <input id="newUserPassword2" type="password" placeholder="再次输入密码" />
+                  </label>
+                  <label>
+                    <span class="fake-label">操作</span>
+                    <button id="createUserBtn" class="btn btn-primary" type="button">新增账号</button>
+                  </label>
+                </div>
+
+                <h3>修改密码</h3>
+                <div class="form-grid">
+                  <label>
+                    选择账号
+                    <select id="passwordUserSelect"></select>
+                  </label>
+                  <label>
+                    新密码
+                    <input id="changePasswordInput" type="password" placeholder="至少6位" />
+                  </label>
+                  <label>
+                    <span class="fake-label">操作</span>
+                    <button id="changePasswordBtn" class="btn" type="button">更新密码</button>
+                  </label>
+                </div>
+                <p id="userManageStatus" class="status"></p>
+
+                <div class="table-wrap">
+                  <table id="usersTable">
+                    <thead>
+                      <tr>
+                        <th>用户名</th>
+                        <th>显示名</th>
+                        <th>角色</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </section>
+              <section id="systemNoPermission" class="panel reveal hidden">
+                <h2>L2 系统权限模块</h2>
+                <p class="hint">当前账号无系统权限设置权限，仅超级管理员与财务负责人可访问。</p>
+              </section>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/legacy/build/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
