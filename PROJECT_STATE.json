@@ -1,0 +1,125 @@
+{
+  "savedAt": "2026-03-14",
+  "purpose": "保存当前企业经营看板与多模块业务系统的实现状态，便于未来继续增加功能时直接接力开发。",
+  "savedFiles": [
+    "index.html",
+    "app.js",
+    "styles.css",
+    "README.md",
+    "PROJECT_STATE.md",
+    "PROJECT_STATE.json"
+  ],
+  "implementedModules": [
+    "客户报价模块",
+    "销售/收入分析模块",
+    "成本分析模块",
+    "经营情况分析模块",
+    "系统权限模块",
+    "蓝色经营驾驶舱总览"
+  ],
+  "quoteFormula": {
+    "expression": "出货价 = (RRP / (1 + VAT)) × (1 - Front Margin) × (1 - DB点位 - 客户Margin - Service Fee) - STKbuffer",
+    "inputFields": [
+      "customerName",
+      "sku",
+      "category",
+      "rrp1~rrp12",
+      "dbRate",
+      "customerMargin",
+      "serviceFee",
+      "stkBuffer",
+      "frontMargin",
+      "vatRate",
+      "ura"
+    ],
+    "automatedOutputs": [
+      "月度出货价",
+      "销售录入自动单价回填",
+      "revenue",
+      "grossProfit",
+      "grossMargin",
+      "经营看板汇总指标"
+    ]
+  },
+  "approvalWorkflow": {
+    "appliesTo": [
+      "报价数据",
+      "销售数据",
+      "成本数据",
+      "经营补充数据"
+    ],
+    "statuses": [
+      "pending",
+      "confirmed"
+    ],
+    "metadata": [
+      "approvalStatus",
+      "confirmedAt",
+      "confirmedBy"
+    ],
+    "rule": "数据修改后自动回到 pending。"
+  },
+  "permissions": {
+    "super_admin": {
+      "description": "超级管理员",
+      "canConfirmData": true,
+      "scope": "全部权限"
+    },
+    "finance_head": {
+      "description": "财务负责人",
+      "canConfirmData": true,
+      "scope": "全部权限"
+    },
+    "sales_head": {
+      "description": "业务负责人",
+      "canConfirmData": false,
+      "scope": "报价维护、销售录入、销售分析，不含敏感财务汇总"
+    },
+    "sales_rep": {
+      "description": "业务人员",
+      "canConfirmData": false,
+      "scope": "报价查询、销售录入、销售分析，不含报价维护和敏感财务指标"
+    }
+  },
+  "runtimeStorage": {
+    "type": "browser_localStorage",
+    "keys": [
+      "customer_quote_records_v1",
+      "customer_revenue_records_v1",
+      "business_cost_records_v1",
+      "business_operation_entries_v1",
+      "customer_quote_users_v1",
+      "customer_quote_session_v1",
+      "deepseek_api_key_v1",
+      "business_active_module_v1"
+    ],
+    "note": "源码已保存在项目文件中；实际业务数据仍在浏览器本地，尚未后端化。"
+  },
+  "deepseek": {
+    "enabled": true,
+    "hardcodedApiKey": false,
+    "usage": [
+      "销售/收入 AI 分析",
+      "成本 AI 分析",
+      "经营情况 AI 分析",
+      "成本图片/发票识别",
+      "成本文字/邮件识别"
+    ]
+  },
+  "continueReadingOrder": [
+    "PROJECT_STATE.md",
+    "PROJECT_STATE.json",
+    "README.md",
+    "index.html",
+    "app.js",
+    "styles.css"
+  ],
+  "futurePriorities": [
+    "后端化与数据库持久化",
+    "DeepSeek 服务端代理",
+    "确认流转升级为审计流程",
+    "图表与钻取分析",
+    "更细粒度权限",
+    "数据导出能力"
+  ]
+}
